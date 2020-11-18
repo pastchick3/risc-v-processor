@@ -24,6 +24,6 @@ module Register (
             mem[write_addr] <= write_data;
         end
 
-        $strobe("REG: %b %b %b", mem[5], mem[6], mem[7]);
+        // $strobe("REG: %b %b %b", mem[5], mem[6], mem[7]);
     end
 endmodule

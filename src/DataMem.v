@@ -15,6 +15,6 @@ module DataMem (
             mem[addr] <= write_data;
         end
 
-        // $strobe("MEM: %b %b %b %b", mem[0], mem[1], mem[2], mem[3]);
+        $strobe("MEM: %b %b %b %b %b %b %b %b %b", mem[0], mem[1], mem[2], mem[3], mem[4], mem[5], mem[6], mem[7], mem[8]);
     end
 endmodule
