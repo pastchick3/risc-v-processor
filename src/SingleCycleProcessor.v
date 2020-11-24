@@ -1,4 +1,4 @@
-module Processor (
+module SingleCycleProcessor (
     input clk
 );
     reg [4:0] pc = 0;
