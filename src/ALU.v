@@ -9,11 +9,11 @@ module ALU (
     
     always @(ctrl, in_1, in_2) begin
         case (ctrl)
-            0: out <= in_1 & in_2;
-            1: out <= in_1 | in_2;
-            2: out <= in_1 + in_2;
-            3: out <= in_1 - in_2;
-            default: out <= 0;
+            0: out = in_1 & in_2;
+            1: out = in_1 | in_2;
+            2: out = in_1 + in_2;
+            3: out = in_1 - in_2;
+            default: out = 0;
         endcase
     end
 endmodule

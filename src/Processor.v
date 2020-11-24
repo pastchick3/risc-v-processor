@@ -2,7 +2,6 @@ module Processor (
     input clk
 );
     reg [4:0] pc = 0;
-    reg [31:0] inst_reg = 0;
 
     wire [31:0] inst;
     wire reg_write_enable;
@@ -10,7 +9,8 @@ module Processor (
     wire [4:0] reg_read_addr_2;
     wire [4:0] reg_write_addr;
     wire data_write_enable;
-    wire [4:0] data_addr;
+    wire [4:0] data_read_addr;
+    wire [4:0] data_write_addr;
     wire [1:0] alu_ctrl;
     wire reg_write_select;
     wire branch;
@@ -19,19 +19,19 @@ module Processor (
     wire [7:0] reg_read_data_1;
     wire [7:0] reg_read_data_2;
     wire [7:0] data_read_data;
-
     wire [7:0] alu_out;
     wire [7:0] reg_write_mux_out;
     wire zero;
 
     Decoder decoder (
-        .inst(inst_reg),
+        .inst(inst),
         .reg_write_enable(reg_write_enable),
         .reg_read_addr_1(reg_read_addr_1),
         .reg_read_addr_2(reg_read_addr_2),
         .reg_write_addr(reg_write_addr),
         .data_write_enable(data_write_enable),
-        .data_addr(data_addr),
+        .data_read_addr(data_read_addr),
+        .data_write_addr(data_write_addr),
         .alu_ctrl(alu_ctrl),
         .reg_write_select(reg_write_select),
         .branch(branch),
@@ -57,7 +57,8 @@ module Processor (
     DataMem data_mem (
         .clk(clk),
         .write_enable(data_write_enable),
-        .addr(data_addr),
+        .read_addr(data_read_addr),
+        .write_addr(data_write_addr),
         .write_data(reg_read_data_1),
         .read_data(data_read_data)
     );
@@ -78,11 +79,14 @@ module Processor (
     );
     
     always @(posedge clk) begin
+        // The program counter is updated in the very beginning of
+        // each clock cycle to make sure every signal and register
+        // from the last clock cycle is stable. See `InstMem.v` for
+        // more information.
         if (branch & zero) begin
             pc = pc + branch_offset;
         end else begin
             pc = pc + 1;
         end
-        inst_reg = inst;
     end
 endmodule
