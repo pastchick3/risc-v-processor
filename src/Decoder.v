@@ -30,7 +30,7 @@ module Decoder (
             17'bXXXXXXX_011_0100011: begin // sd
                 reg_write_enable = 1'b0;
                 reg_read_addr_1 = inst[24:20];
-                reg_read_addr_2 = 5'b00000;
+                reg_read_addr_2 = 5'b00000; // The memory base register is always x0.
                 reg_write_addr = 5'b00000;
                 data_write_enable = 1'b1;
                 data_read_addr = 5'b00000;

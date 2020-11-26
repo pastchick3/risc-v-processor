@@ -32,6 +32,8 @@ module PipelinedProcessor (
 
     // ID/EX pipeline registers
     reg [4:0] id_ex_pc = 0;
+    reg [4:0] id_ex_reg_read_addr_1 = 0;
+    reg [4:0] id_ex_reg_read_addr_2 = 0;
     reg [7:0] id_ex_reg_read_data_1 = 0;
     reg [7:0] id_ex_reg_read_data_2 = 0;
     reg id_ex_reg_write_enable = 0;
@@ -60,6 +62,14 @@ module PipelinedProcessor (
     reg mem_wb_reg_write_select = 0;
     reg [7:0] mem_wb_alu_out = 0;
     reg [7:0] mem_wb_data_read_data = 0;
+
+    // Data hazard control signals
+    wire [1:0] forward_1;
+    wire [1:0] forward_2;
+    wire stall;
+
+    wire [7:0] alu_in_1_mux_out;
+    wire [7:0] alu_in_2_mux_out;
 
     Decoder decoder (
         .inst(if_id_inst),
@@ -101,19 +111,52 @@ module PipelinedProcessor (
         .read_data(data_read_data)
     );
 
-    Mux reg_write_mux (
+    Mux2 reg_write_mux (
         .select(mem_wb_reg_write_select),
         .in_1(mem_wb_data_read_data),
         .in_2(mem_wb_alu_out),
         .out(reg_write_mux_out)
     );
 
+    Mux3 alu_in_1_mux (
+        .select(forward_1),
+        .in_1(id_ex_reg_read_data_1),
+        .in_2(ex_mem_alu_out),
+        .in_3(reg_write_mux_out),
+        .out(alu_in_1_mux_out)
+    );
+
+    Mux3 alu_in_2_mux (
+        .select(forward_2),
+        .in_1(id_ex_reg_read_data_2),
+        .in_2(ex_mem_alu_out),
+        .in_3(reg_write_mux_out),
+        .out(alu_in_2_mux_out)
+    );
+
     ALU alu (
         .ctrl(id_ex_alu_ctrl),
-        .in_1(id_ex_reg_read_data_1),
-        .in_2(id_ex_reg_read_data_2),
+        .in_1(alu_in_1_mux_out),
+        .in_2(alu_in_2_mux_out),
         .out(alu_out),
         .zero(zero)
+    );
+
+    DataHazardCtrl data_hazard_ctrl (
+        .clk(clk),
+        .ex_mem_reg_write_enable(ex_mem_reg_write_enable),
+        .ex_mem_reg_write_addr(ex_mem_reg_write_addr),
+        .mem_wb_reg_write_enable(mem_wb_reg_write_enable),
+        .mem_wb_reg_write_addr(mem_wb_reg_write_addr),
+        .id_ex_reg_read_addr_1(id_ex_reg_read_addr_1),
+        .id_ex_reg_read_addr_2(id_ex_reg_read_addr_2),
+        .id_ex_reg_write_enable(id_ex_reg_write_enable),
+        .id_ex_reg_write_select(id_ex_reg_write_select),
+        .id_ex_reg_write_addr(id_ex_reg_write_addr),
+        .if_id_inst(if_id_inst),
+        .forward_1(forward_1),
+        .forward_2(forward_2),
+        .stall(stall)
     );
     
     always @(posedge clk) begin
@@ -122,7 +165,7 @@ module PipelinedProcessor (
         // from the last clock cycle is stable. See `InstMem.v` for
         // more information.
         if (id_ex_branch & zero) begin
-            pc = id_ex_pc - 1 + id_ex_branch_offset;
+            pc <= id_ex_pc + id_ex_branch_offset * 2;
 
             // Flush IF/ID pipeline registers.        
             if_id_pc <= 0;
@@ -130,6 +173,28 @@ module PipelinedProcessor (
 
             // Flush ID/EX pipeline registers.
             id_ex_pc <= 0;
+            id_ex_reg_read_addr_1 <= 0;
+            id_ex_reg_read_addr_2 <= 0;
+            id_ex_reg_read_data_1 <= 0;
+            id_ex_reg_read_data_2 <= 0;
+            id_ex_reg_write_enable <= 0;
+            id_ex_reg_write_addr <= 0;
+            id_ex_data_write_enable <= 0;
+            id_ex_data_read_addr <= 0;
+            id_ex_data_write_addr <= 0;
+            id_ex_alu_ctrl <= 0;
+            id_ex_reg_write_select <= 0;
+            id_ex_branch <= 0;
+            id_ex_branch_offset <= 0;
+        end else if (stall) begin
+            pc <= pc;
+       
+            if_id_pc <= if_id_pc;
+            if_id_inst <= if_id_inst;
+
+            id_ex_pc <= 0;
+            id_ex_reg_read_addr_1 <= 0;
+            id_ex_reg_read_addr_2 <= 0;
             id_ex_reg_read_data_1 <= 0;
             id_ex_reg_read_data_2 <= 0;
             id_ex_reg_write_enable <= 0;
@@ -142,7 +207,7 @@ module PipelinedProcessor (
             id_ex_branch <= 0;
             id_ex_branch_offset <= 0;
         end else begin
-            pc = pc + 1;
+            pc <= pc + 1;
 
             // Load IF/ID pipeline registers.        
             if_id_pc <= pc;
@@ -150,6 +215,8 @@ module PipelinedProcessor (
 
             // Load ID/EX pipeline registers.
             id_ex_pc <= if_id_pc;
+            id_ex_reg_read_addr_1 <= reg_read_addr_1;
+            id_ex_reg_read_addr_2 <= reg_read_addr_2;
             id_ex_reg_read_data_1 <= reg_read_data_1;
             id_ex_reg_read_data_2 <= reg_read_data_2;
             id_ex_reg_write_enable <= reg_write_enable;
@@ -164,7 +231,7 @@ module PipelinedProcessor (
         end
 
         // Load EX/MEM pipeline registers.
-        ex_mem_reg_read_data_1 <= id_ex_reg_read_data_1;
+        ex_mem_reg_read_data_1 <= alu_in_1_mux_out; // forwarded
         ex_mem_reg_write_enable <= id_ex_reg_write_enable;
         ex_mem_reg_write_addr <= id_ex_reg_write_addr;
         ex_mem_data_write_enable <= id_ex_data_write_enable;

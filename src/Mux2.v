@@ -1,4 +1,4 @@
-module Mux (
+module Mux2 (
     input select,
     input [7:0] in_1,
     input [7:0] in_2,

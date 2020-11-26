@@ -63,7 +63,7 @@ module SingleCycleProcessor (
         .read_data(data_read_data)
     );
 
-    Mux reg_write_mux (
+    Mux2 reg_write_mux (
         .select(reg_write_select),
         .in_1(data_read_data),
         .in_2(alu_out),
@@ -84,7 +84,7 @@ module SingleCycleProcessor (
         // from the last clock cycle is stable. See `InstMem.v` for
         // more information.
         if (branch & zero) begin
-            pc = pc + branch_offset;
+            pc = pc + branch_offset * 2;
         end else begin
             pc = pc + 1;
         end
