@@ -1,5 +1,4 @@
 ld x6, 0(x0)
-nop
 ld x7, 1(x0)
 
 and x5, x6, x7

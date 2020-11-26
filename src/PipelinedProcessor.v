@@ -63,6 +63,11 @@ module PipelinedProcessor (
     reg [7:0] mem_wb_alu_out = 0;
     reg [7:0] mem_wb_data_read_data = 0;
 
+    // WB pipeline registers
+    reg [7:0] wb_reg_write_mux_out = 0;
+    reg wb_reg_write_enable = 0;
+    reg [4:0] wb_reg_write_addr = 0;
+
     // Data hazard control signals
     wire [1:0] forward_1;
     wire [1:0] forward_2;
@@ -118,19 +123,21 @@ module PipelinedProcessor (
         .out(reg_write_mux_out)
     );
 
-    Mux3 alu_in_1_mux (
+    Mux4 alu_in_1_mux (
         .select(forward_1),
         .in_1(id_ex_reg_read_data_1),
         .in_2(ex_mem_alu_out),
         .in_3(reg_write_mux_out),
+        .in_4(wb_reg_write_mux_out),
         .out(alu_in_1_mux_out)
     );
 
-    Mux3 alu_in_2_mux (
+    Mux4 alu_in_2_mux (
         .select(forward_2),
         .in_1(id_ex_reg_read_data_2),
         .in_2(ex_mem_alu_out),
         .in_3(reg_write_mux_out),
+        .in_4(wb_reg_write_mux_out),
         .out(alu_in_2_mux_out)
     );
 
@@ -148,6 +155,8 @@ module PipelinedProcessor (
         .ex_mem_reg_write_addr(ex_mem_reg_write_addr),
         .mem_wb_reg_write_enable(mem_wb_reg_write_enable),
         .mem_wb_reg_write_addr(mem_wb_reg_write_addr),
+        .wb_reg_write_enable(wb_reg_write_enable),
+        .wb_reg_write_addr(wb_reg_write_addr),
         .id_ex_reg_read_addr_1(id_ex_reg_read_addr_1),
         .id_ex_reg_read_addr_2(id_ex_reg_read_addr_2),
         .id_ex_reg_write_enable(id_ex_reg_write_enable),
@@ -246,5 +255,10 @@ module PipelinedProcessor (
         mem_wb_reg_write_select <= ex_mem_reg_write_select;
         mem_wb_alu_out <= ex_mem_alu_out;
         mem_wb_data_read_data <= data_read_data;
+
+        // Load WB pipeline registers.
+        wb_reg_write_mux_out <= reg_write_mux_out;
+        wb_reg_write_enable = mem_wb_reg_write_enable;
+        wb_reg_write_addr = mem_wb_reg_write_addr;
     end
 endmodule

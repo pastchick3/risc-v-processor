@@ -4,6 +4,8 @@ module DataHazardCtrl (
     input [4:0] ex_mem_reg_write_addr,
     input mem_wb_reg_write_enable,
     input [4:0] mem_wb_reg_write_addr,
+    input wb_reg_write_enable,
+    input [4:0] wb_reg_write_addr,
     input [4:0] id_ex_reg_read_addr_1,
     input [4:0] id_ex_reg_read_addr_2,
     input id_ex_reg_write_enable,
@@ -26,6 +28,11 @@ module DataHazardCtrl (
             && (mem_wb_reg_write_addr == id_ex_reg_read_addr_1)) begin
             // MEM hazard
             forward_1 = 2'b10;
+        end else if (wb_reg_write_enable
+            && (wb_reg_write_addr != 0)
+            && (wb_reg_write_addr == id_ex_reg_read_addr_1)) begin
+            // WB hazard
+            forward_1 = 2'b11;
         end else begin
             // No hazard
             forward_1 = 2'b00;
@@ -42,6 +49,11 @@ module DataHazardCtrl (
             && (mem_wb_reg_write_addr == id_ex_reg_read_addr_2)) begin
             // MEM hazard
             forward_2 = 2'b10;
+        end else if (wb_reg_write_enable
+            && (wb_reg_write_addr != 0)
+            && (wb_reg_write_addr == id_ex_reg_read_addr_2)) begin
+            // WB hazard
+            forward_2 = 2'b11;
         end else begin
             // No hazard
             forward_2 = 2'b00;
