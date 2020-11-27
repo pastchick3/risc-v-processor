@@ -1,4 +1,4 @@
-`define pipelined
+`define pipelined  // Comment out this line to run the single-cycle version.
 
 module Driver ();
     reg clk;
@@ -12,7 +12,7 @@ module Driver ();
             .clk(clk)
         );
     `endif
-    
+
     initial begin
         $dumpfile("./Processor.vcd");
         $dumpvars(0, processor);

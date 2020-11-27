@@ -16,7 +16,6 @@ sd x5, 5(x0)
 beq x6, x7, 4
 sd x6, 6(x0)
 
-// Skip `sd x7, 7(x0)`.
 beq x6, x6, 4
-sd x7, 7(x0)
+sd x7, 7(x0) //skipped
 sd x7, 8(x0)

@@ -4,7 +4,7 @@ module PipelinedProcessor (
     // The program counter
     reg [4:0] pc = 0;
 
-    // Control signals used by the instruction decoder
+    // Control signals from the instruction decoder
     wire [31:0] inst;
     wire reg_write_enable;
     wire [4:0] reg_read_addr_1;
@@ -18,7 +18,7 @@ module PipelinedProcessor (
     wire branch;
     wire [4:0] branch_offset;
     
-    // Signals used by other modules
+    // Signals used by other computing and memory modules
     wire [7:0] reg_read_data_1;
     wire [7:0] reg_read_data_2;
     wire [7:0] data_read_data;
@@ -63,16 +63,15 @@ module PipelinedProcessor (
     reg [7:0] mem_wb_alu_out = 0;
     reg [7:0] mem_wb_data_read_data = 0;
 
-    // WB pipeline registers
+    // WB pipeline registers (see `README.md` for more infomation)
     reg [7:0] wb_reg_write_mux_out = 0;
     reg wb_reg_write_enable = 0;
     reg [4:0] wb_reg_write_addr = 0;
 
-    // Data hazard control signals
+    // Data hazards control signals
     wire [1:0] forward_1;
     wire [1:0] forward_2;
     wire stall;
-
     wire [7:0] alu_in_1_mux_out;
     wire [7:0] alu_in_2_mux_out;
 
@@ -167,13 +166,13 @@ module PipelinedProcessor (
         .forward_2(forward_2),
         .stall(stall)
     );
-    
+
     always @(posedge clk) begin
-        // The program counter is updated in the very beginning of
+        // The program counter is updated at the very beginning of
         // each clock cycle to make sure every signal and register
-        // from the last clock cycle is stable. See `InstMem.v` for
-        // more information.
+        // from the last clock cycle is stable.
         if (id_ex_branch & zero) begin
+            // Branch to a new instruction.
             pc <= id_ex_pc + id_ex_branch_offset * 2;
 
             // Flush IF/ID pipeline registers.        
@@ -196,11 +195,14 @@ module PipelinedProcessor (
             id_ex_branch <= 0;
             id_ex_branch_offset <= 0;
         end else if (stall) begin
+            // Stall the pipeline.
             pc <= pc;
-       
+
+            // Stall IF/ID pipeline registers. 
             if_id_pc <= if_id_pc;
             if_id_inst <= if_id_inst;
 
+            // Flush ID/EX pipeline registers.
             id_ex_pc <= 0;
             id_ex_reg_read_addr_1 <= 0;
             id_ex_reg_read_addr_2 <= 0;
@@ -216,6 +218,7 @@ module PipelinedProcessor (
             id_ex_branch <= 0;
             id_ex_branch_offset <= 0;
         end else begin
+            // Advance to the next instruction.
             pc <= pc + 1;
 
             // Load IF/ID pipeline registers.        
@@ -240,7 +243,7 @@ module PipelinedProcessor (
         end
 
         // Load EX/MEM pipeline registers.
-        ex_mem_reg_read_data_1 <= alu_in_1_mux_out; // forwarded
+        ex_mem_reg_read_data_1 <= alu_in_1_mux_out; // forwarded data
         ex_mem_reg_write_enable <= id_ex_reg_write_enable;
         ex_mem_reg_write_addr <= id_ex_reg_write_addr;
         ex_mem_data_write_enable <= id_ex_data_write_enable;

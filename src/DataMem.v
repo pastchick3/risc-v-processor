@@ -9,6 +9,7 @@ module DataMem (
     integer cycle = 0;
     reg [7:0] mem [0:31];
     initial $readmemb("./data.mem", mem);
+    
     assign read_data = mem[read_addr];
 
     always @(posedge clk) begin

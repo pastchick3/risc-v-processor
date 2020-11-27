@@ -3,6 +3,7 @@ module SingleCycleProcessor (
 );
     reg [4:0] pc = 0;
 
+    // Decoder signals
     wire [31:0] inst;
     wire reg_write_enable;
     wire [4:0] reg_read_addr_1;
@@ -15,7 +16,8 @@ module SingleCycleProcessor (
     wire reg_write_select;
     wire branch;
     wire [4:0] branch_offset;
-    
+
+    // Other signals
     wire [7:0] reg_read_data_1;
     wire [7:0] reg_read_data_2;
     wire [7:0] data_read_data;
@@ -77,9 +79,9 @@ module SingleCycleProcessor (
         .out(alu_out),
         .zero(zero)
     );
-    
+
     always @(posedge clk) begin
-        // The program counter is updated in the very beginning of
+        // The program counter is updated at the very beginning of
         // each clock cycle to make sure every signal and register
         // from the last clock cycle is stable. See `InstMem.v` for
         // more information.

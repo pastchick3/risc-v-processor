@@ -65,9 +65,9 @@ module DataHazardCtrl (
         if ((id_ex_reg_write_enable && !id_ex_reg_write_select)
             && ((id_ex_reg_write_addr == if_id_inst[19:15])
             || (id_ex_reg_write_addr == if_id_inst[24:20]))) begin
-            stall = 1'b1;
+            stall = 1;
         end else begin
-            stall = 1'b0;
+            stall = 0;
         end
     end
 endmodule

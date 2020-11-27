@@ -14,6 +14,7 @@ module Register (
             mem[i] = 0;
         end
     end
+
     assign read_data_1 = mem[read_addr_1];
     assign read_data_2 = mem[read_addr_2];
 
