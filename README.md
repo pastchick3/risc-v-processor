@@ -4,7 +4,7 @@ A simple RISC-V processor for learning.
 
 ## Overview
 
-The main structure of `risc-v-processor` follows the Chapter 4 in [Computer Organization and Design](https://www.amazon.com/Computer-Organization-Design-RISC-V-Architecture/dp/0128122757) by David A. Patterson and John L. Hennessy as the figure below shows. Notice we add an extra set of pipeline registers WB in the writeback stage to handle a more sophisticated forwarding situation which is not considered in the original book (more on the last section of this document).
+The main structure of `risc-v-processor` follows the Chapter 4 in [Computer Organization and Design](https://www.amazon.com/Computer-Organization-Design-RISC-V-Architecture/dp/0128122757) by David A. Patterson and John L. Hennessy as the figure below shows. Notice we add an extra set of pipeline registers WB in the writeback stage to avoid using special (positive and negtive edge triggering) register file (more on the last section of this document).
 
 ![Pipelined Control Overview](pipelined_control_overview.jpg)
 
@@ -113,13 +113,14 @@ DataMem in Cycle 15: 00000011 00000001 00000001 00000011 00000100 00000010 00000
 DataMem in Cycle 16: 00000011 00000001 00000001 00000011 00000100 00000010 00000000 00000000 00000000
 DataMem in Cycle 17: 00000011 00000001 00000001 00000011 00000100 00000010 00000011 00000000 00000000
 DataMem in Cycle 18: 00000011 00000001 00000001 00000011 00000100 00000010 00000011 00000000 00000000
+DataMem in Cycle 19: 00000011 00000001 00000001 00000011 00000100 00000010 00000011 00000000 00000000
 DataMem in Cycle 20: 00000011 00000001 00000001 00000011 00000100 00000010 00000011 00000000 00000000
 DataMem in Cycle 21: 00000011 00000001 00000001 00000011 00000100 00000010 00000011 00000000 00000001
 ```
 
-## Improved Forwarding Schema
+## Modified Forwarding Schema
 
-The original forwarding schema from the book uses two stages of pipeline registers (EX/MEM and MEM/WB) so it can forward data that just come out of the ALU and the data memory to the input ports of the ALU. However, consider the execution of the first three instructions in our example program as the code block and the table below shows. At the cycle 6, the content of the x7 register is forwarded to instruction 3 from the MEM/WB pipeline register, but instruction 3 cannot obtain the content of the x6 register because it has been written back to the register file and lost in the pipeline. Also, it is impossible for instruction 3 to read the register file again because the register file is currently being used by instruction 4. To solve this problem, an extra sets of pipeline registers WB with appropriate forwarding control logic are added in the writeback stage, so the content of x6 will be properly forwarded to instruction 3.
+The original forwarding schema from the book uses two stages of pipeline registers (EX/MEM and MEM/WB), so it can forward data that just come out of the ALU and the data memory to the input ports of the ALU. Also, it requires a read operation of the register file can get the fresh value just written back in the same clock cycle to perform correct forwarding, which demands a special (positive and negtive triggering) hardware. To clearly demonstrate the problem, consider the execution of the first three instructions in our example program as the code block and the table below shows. At the clock cycle 6, the content of the x7 register is forwarded to the instruction 3 from the MEM/WB pipeline register, but the the instruction 3 cannot obtain the content of the x6 register from any pipeline registers because it has been written back to the register file and lost in the pipeline. Therefore, the instruction must secure the value at cycle 5, where the value is just written back to the register file. To avoiding such special hardware, an extra sets of pipeline registers WB with appropriate forwarding control logic are added in the writeback stage, so the content of x6 will be properly forwarded to instruction 3 at the clock cycle 6.
 
 ``` ASM
 ld x6, 0(x0) // inst 1
